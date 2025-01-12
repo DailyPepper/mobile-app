@@ -1,175 +1,54 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React from 'react';
+import { View, Text, FlatList, StyleSheet, ScrollView } from 'react-native';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { LineChart } from 'react-native-chart-kit';
 
 export default function HistoryScreen() {
   const bmiHistory = useSelector((state: RootState) => state.bmi.bmiHistory);
-  const [selectedChart, setSelectedChart] = useState<'bmi' | 'temperature' | 'age'>('bmi');
 
-  const bmiData = bmiHistory.map(item => item.bmi);
-  const dates = bmiHistory.map(item => item.date);
-  const temperatureData = bmiHistory.map(item => parseFloat(item.temperature) || 0);
-  const ageData = bmiHistory.map(item => parseInt(item.age) || 0);
+  const calculateBASFIComment = (averageScore: number) => {
+    let bmiComment = '';
+    let bmiColor = '#000';
 
-  const renderChart = () => {
-    switch (selectedChart) {
-      case 'bmi':
-        return (
-          <LineChart
-            style={styles.chart}
-            data={{
-              labels: dates,
-              datasets: [
-                {
-                  data: bmiData,
-                  strokeWidth: 3,
-                },
-              ],
-            }}
-            width={Math.max(350, dates.length * 40)}
-            height={280}
-            yAxisLabel="ИМТ "
-            chartConfig={{
-              backgroundColor: '#1E90FF',
-              backgroundGradientFrom: '#1E90FF',
-              backgroundGradientTo: '#1E90FF',
-              color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-              decimalPlaces: 1,
-              propsForLabels: {
-                fontSize: '12',
-                paddingRight: 10,
-              },
-              style: {
-                paddingRight: 20,
-                paddingLeft: 20,
-              },
-            }}
-            withVerticalLabels={true}
-          />
-        );
-      case 'temperature':
-        return (
-          <LineChart
-            style={styles.chart}
-            data={{
-              labels: dates,
-              datasets: [
-                {
-                  data: temperatureData,
-                  strokeWidth: 3,
-                },
-              ],
-            }}
-            width={Math.max(350, dates.length * 40)}
-            height={280}
-            yAxisLabel="°C "
-            chartConfig={{
-              backgroundColor: '#FF6347',
-              backgroundGradientFrom: '#FF6347',
-              backgroundGradientTo: '#FF6347',
-              color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-              decimalPlaces: 1,
-              propsForLabels: {
-                fontSize: '12',
-                paddingRight: 10,
-              },
-              style: {
-                paddingRight: 20,
-                paddingLeft: 20,
-              },
-            }}
-            withVerticalLabels={true}
-          />
-        );
-      case 'age':
-        return (
-          <LineChart
-            style={styles.chart}
-            data={{
-              labels: dates,
-              datasets: [
-                {
-                  data: ageData,
-                  strokeWidth: 3,
-                },
-              ],
-            }}
-            width={Math.max(350, dates.length * 40)}
-            height={280}
-            yAxisLabel="Лет "
-            chartConfig={{
-              backgroundColor: '#32CD32',
-              backgroundGradientFrom: '#32CD32',
-              backgroundGradientTo: '#32CD32',
-              color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-              decimalPlaces: 1,
-              propsForLabels: {
-                fontSize: '12',
-                paddingRight: 10,
-              },
-              style: {
-                paddingRight: 20,
-                paddingLeft: 20,
-              },
-            }}
-            withVerticalLabels={true}
-          />
-        );
-      default:
-        return null;
+    if (averageScore < 1) {
+      bmiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Отсутствие ограничений.`;
+      bmiColor = '#32CD32';
+    } else if (averageScore <= 5) {
+      bmiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Умеренные ограничения.`;
+      bmiColor = '#FFA500';
+    } else {
+      bmiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Невозможность выполнить определенное действие. Рекомендуется консультация врача.`;
+      bmiColor = '#FF6347';
     }
+    
+    return { bmiComment, bmiColor };
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>История расчётов ИМТ</Text>
-
-      {bmiHistory.length === 0 ? (
-        <Text style={styles.noHistoryText}>История пуста. Пожалуйста, добавьте данные.</Text>
-      ) : (
-        <>
-          <View style={styles.chartContainer}>
-            {renderChart()}
-          </View>
-
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.chartButton, selectedChart === 'bmi' && styles.selectedButton]}
-              onPress={() => setSelectedChart('bmi')}>
-              <Text style={styles.chartButtonText}>ИМТ</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.chartButton, selectedChart === 'temperature' && styles.selectedButton]}
-              onPress={() => setSelectedChart('temperature')}>
-              <Text style={styles.chartButtonText}>Температура</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.chartButton, selectedChart === 'age' && styles.selectedButton]}
-              onPress={() => setSelectedChart('age')}>
-              <Text style={styles.chartButtonText}>Возраст</Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.historyContainer}>
-            <FlatList
-              data={bmiHistory}
-              keyExtractor={(item, index) => index.toString()}
-              renderItem={({ item, index }) => (
-                <View style={styles.itemContainer}>
-                  <Text style={styles.index}>Index: {index + 1}</Text>
-                  <Text style={styles.bmi}>ИМТ: {item.bmi.toFixed(1)}</Text>
-                  <Text style={styles.comment}>{item.comment}</Text>
-                </View>
-              )}
-            />
-          </ScrollView>
-        </>
-      )}
+      <Text style={styles.title}>История ваших расчётов</Text>
+      <ScrollView style={styles.historyContainer}>
+      <FlatList
+          data={bmiHistory}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item }) => {
+            const { bmiComment, bmiColor } = calculateBASFIComment(item.score);
+            return (
+              <View style={styles.itemContainer}>
+                <Text style={styles.date}>
+                  {new Date(item.date).toLocaleDateString('ru-RU', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </Text>
+                <Text style={[styles.bmi, { color: bmiColor }]}>ИМТ: {item.score}</Text>
+                <Text style={styles.comment}>{bmiComment}</Text>
+              </View>
+            );
+          }}
+        />
+      </ScrollView>
     </View>
   );
 }
@@ -177,16 +56,16 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 25,
     marginTop: 50,
     backgroundColor: '#f9f9f9',
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#4A90E2',
     marginBottom: 20,
-    alignItems: 'center',
+    textAlign: 'center',
   },
   chartContainer: {
     marginBottom: 20,
@@ -200,6 +79,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     marginBottom: 20,
   },
+  date: {
+    position: 'absolute',
+    right: 20,
+    top: 15,
+    fontSize: 16,
+    color: '#666',
+  },  
   chartButton: {
     backgroundColor: '#1E90FF',
     paddingVertical: 10,
@@ -241,13 +127,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#4CAF50',
     fontWeight: 'bold',
-    marginTop: 8,
   },
   comment: {
     fontSize: 14,
     color: '#555',
     marginTop: 10,
-    fontStyle: 'italic',
+    fontStyle: 'normal',
   },
   noHistoryText: {
     fontSize: 18,

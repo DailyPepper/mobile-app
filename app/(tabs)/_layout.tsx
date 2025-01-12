@@ -1,19 +1,15 @@
 import { Tabs } from "expo-router";
 import React from "react";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
 import { Ionicons } from "@expo/vector-icons";
 import { Provider } from "react-redux";
 import { store } from "@/store/store";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
 
   return (
     <Provider store={store}>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
           headerShown: false,
         }}
       >

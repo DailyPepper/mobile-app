@@ -1,114 +1,108 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { addBmiHistory } from '@/store/bmiSlice';
+import Slider from '@react-native-community/slider';
 
 export default function CalendarScreen() {
   const dispatch = useDispatch();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [weight, setWeight] = useState('');
-  const [height, setHeight] = useState('');
   const [bmi, setBmi] = useState<number | null>(null);
   const [comment, setComment] = useState('');
-  const [temperature, setTemperature] = useState('');
-  const [age, setAge] = useState('');
   const [bmiColor, setBmiColor] = useState('#000');
+  const [answers, setAnswers] = useState<number[]>(Array(10).fill(0));
 
-  const calculateBmi = () => {
-    const w = parseFloat(weight);
-    const h = parseFloat(height) / 100;
+  const questions = [
+    'Надевать носки или колготки без посторонней помощи или вспомогательных средств.',
+    'Наклоняться вперед, чтобы поднять предмет с пола без вспомогательных средств.',
+    'Дотягиваться до высоких полок без посторонней помощи или вспомогательных средств.',
+    'Вставать со стула без помощи рук или вспомогательных средств.',
+    'Вставать с пола из положения лежа на спине без посторонней помощи.',
+    'Стоять без опоры в течение 10 минут, не испытывая при этом дискомфорт.',
+    'Подниматься на 12–15 ступеней, не используя при этом перила или иные вспомогательные средства.',
+    'Смотреть через плечо, не поворачивая туловища.',
+    'Заниматься физически активными видами деятельности (например, лечебной физкультурой, работой на садовом участке или спортом).',
+    'Сохранять активность в течение всего дня (дома или на работе).',
+  ];
 
-    if (isNaN(w) || isNaN(h) || w < 0 || h < 0) {
-      Alert.alert('Ошибка', 'Введите корректные значения веса и роста.');
-      return;
-    }
-
-    const bmiValue = w / (h * h);
-    setBmi(parseFloat(bmiValue.toFixed(1)));
-
-    let bmiComment = '';
-
-    if (bmiValue < 18.5) {
-      bmiComment = `Ваш ИМТ составляет ${bmiValue.toFixed(1)}. Это указывает на недостаточный вес. Рекомендуется проконсультироваться с врачом.`;
-      setBmiColor('#FF6347');
-    } else if (bmiValue < 25) {
-      bmiComment = `Ваш ИМТ составляет ${bmiValue.toFixed(1)}. Ваш вес в норме. Продолжайте поддерживать здоровый образ жизни.`;
-      setBmiColor('#32CD32');
-    } else if (bmiValue < 30) {
-      bmiComment = `Ваш ИМТ составляет ${bmiValue.toFixed(1)}. Избыточный вес. Рекомендуется сбалансированное питание и физическая активность.`;
-      setBmiColor('#FFA500');
-    } else {
-      bmiComment = `Ваш ИМТ составляет ${bmiValue.toFixed(1)}. Ожирение. Очень важно обратиться к врачу для планирования безопасного снижения веса.`;
-      setBmiColor('#FF0000');
-    }
-    setComment(bmiComment);
-
-    const currentDate = selectedDate || new Date().toISOString().split('T')[0];
-    dispatch(addBmiHistory({ date: currentDate, bmi: bmiValue, comment: bmiComment, temperature, age }));
+  const handleSliderChange = (value: number, index: number) => {
+    const updatedAnswers = [...answers];
+    updatedAnswers[index] = value;
+    setAnswers(updatedAnswers);
   };
 
+  const calculateBmi = () => {
+    const totalScore = answers.reduce((sum, score) => sum + score, 0);
+    const averageScore = totalScore / answers.length;
+    setBmi(parseFloat(averageScore.toFixed(1)));
+  
+    let bmiComment = '';
+  
+    if (averageScore < 1) {
+      bmiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Отсутствие ограничений.`;
+      setBmiColor('#32CD32');
+    } else if (averageScore <= 5) {
+      bmiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Умеренные ограничения.`;
+      setBmiColor('#FFA500');
+    } else {
+      bmiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Невозможность выполнить определенное действие. Рекомендуется консультация врача.`;
+      setBmiColor('#FF6347');
+    }
+  
+    setComment(bmiComment);
+  
+    const currentDate = selectedDate || new Date().toISOString().split('T')[0]; // Получаем текущую дату в формате yyyy-mm-dd
+    dispatch(addBmiHistory({ date: currentDate, score: averageScore, comment: bmiComment }));
+  };
+  
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Калькулятор ИМТ</Text>
-
-      <Text style={styles.inputLabel}>Вес (кг):</Text>
-      <TextInput
-        style={styles.input}
-        keyboardType="numeric"
-        value={weight}
-        onChangeText={setWeight}
-      />
-
-      <Text style={styles.inputLabel}>Рост (см):</Text>
-      <TextInput
-        style={styles.input}
-        keyboardType="numeric"
-        value={height}
-        onChangeText={setHeight}
-      />
-
-      <Text style={styles.inputLabel}>Температура тела (°C):</Text>
-      <TextInput
-        style={styles.input}
-        keyboardType="numeric"
-        value={temperature}
-        onChangeText={setTemperature}
-      />
-
-      <Text style={styles.inputLabel}>Возраст:</Text>
-      <TextInput
-        style={styles.input}
-        keyboardType="numeric"
-        value={age}
-        onChangeText={setAge}
-      />
-
-      <TouchableOpacity style={styles.button} onPress={calculateBmi}>
-        <Text style={styles.buttonText}>Рассчитать ИМТ</Text>
-      </TouchableOpacity>
-
-      {bmi && (
-        <Text style={[styles.result, { color: bmiColor }]}>
-          {comment}
-        </Text>
-      )}
-    </View>
+      <View style={styles.container}>
+          <Text style={styles.title}>BASFI</Text>
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
+          {questions.map((question, index) => (
+            <View key={index} style={styles.questionContainer}>
+              <Text style={styles.inputLabel}>{`${index + 1}. ${question}`}</Text>
+              <Text style={styles.sliderValue}>{answers[index]}</Text>
+              <Slider
+                style={styles.input}
+                minimumValue={0}
+                maximumValue={10}
+                step={1}
+                value={answers[index]}
+                onValueChange={(value) => handleSliderChange(value, index)}
+                minimumTrackTintColor="#addfad"
+                maximumTrackTintColor="#9797974f"
+              />
+            </View>
+          ))}
+    
+          <TouchableOpacity style={styles.button} onPress={calculateBmi}>
+            <Text style={styles.buttonText}>Рассчитать индекс</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
   );
+  
 }
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    backgroundColor: '#f8f8f8',
+  },
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#f8f8f8',
-    justifyContent: 'center',
+    padding: 25,
+    marginTop: 50,
+    backgroundColor: '#f9f9f9',
   },
   title: {
     fontSize: 30,
     fontWeight: 'bold',
-    color: '#2a2a2a',
+    color: '#4A90E2',
     textAlign: 'center',
-    marginBottom: 30,
+  },
+  questionContainer: {
+    marginBottom: 20,
   },
   inputLabel: {
     fontSize: 16,
@@ -116,13 +110,7 @@ const styles = StyleSheet.create({
     color: '#555',
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 12,
-    borderRadius: 8,
     marginTop: 8,
-    backgroundColor: '#fff',
-    fontSize: 16,
   },
   button: {
     backgroundColor: '#4CAF50',
@@ -142,5 +130,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 20,
     textAlign: 'center',
+  },
+  sliderValue: {
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 8,
   },
 });
