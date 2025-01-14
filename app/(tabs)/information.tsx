@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, FlatList, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, FlatList, Image, StyleSheet, ScrollView } from 'react-native';
 import { useSelector } from 'react-redux';
-import { RootState } from '../store';
+import notData from '../../assets/images/notData.png';
+import { RootState } from '@/store/store';
 
 export default function HistoryScreen() {
   const bmiHistory = useSelector((state: RootState) => state.bmi.bmiHistory);
@@ -28,7 +29,8 @@ export default function HistoryScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>История ваших расчётов</Text>
       <ScrollView style={styles.historyContainer}>
-      <FlatList
+        {bmiHistory.length > 0 ? (
+          <FlatList
           data={bmiHistory}
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => {
@@ -48,6 +50,15 @@ export default function HistoryScreen() {
             );
           }}
         />
+        ) : (
+          <View style={styles.notDataContainer}>
+            <Image 
+              source={notData}
+              style={{ width: 150, height: 150 }}
+            />
+            <Text style={styles.notData}>Нет данных</Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -61,10 +72,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9f9f9',
   },
   title: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: 'bold',
     color: '#4A90E2',
-    marginBottom: 20,
     textAlign: 'center',
   },
   chartContainer: {
@@ -140,4 +150,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
   },
+  notDataContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 20,
+    marginTop: 150
+  },  
+  notData:{
+    fontSize: 20,
+    color: '#777',
+    textAlign: 'center',
+    },
 });

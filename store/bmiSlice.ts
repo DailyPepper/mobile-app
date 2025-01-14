@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface BmiData {
+  score: number; 
   date: string;
   bmi: number;
   comment: string;

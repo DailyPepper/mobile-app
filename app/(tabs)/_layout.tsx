@@ -2,7 +2,7 @@ import { Tabs } from "expo-router";
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Provider } from "react-redux";
-import { store } from "@/store/store";
+import store from "@/store/store";
 
 export default function TabLayout() {
 
