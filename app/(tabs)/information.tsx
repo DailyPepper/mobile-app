@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, FlatList, Image, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, ScrollView, Image, StyleSheet } from 'react-native';
 import { useSelector } from 'react-redux';
 import notData from '../../assets/images/notData.png';
 import { RootState } from '@/store/store';
@@ -21,45 +21,40 @@ export default function HistoryScreen() {
       bmiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Невозможность выполнить определенное действие. Рекомендуется консультация врача.`;
       bmiColor = '#FF6347';
     }
-    
+
     return { bmiComment, bmiColor };
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>История ваших расчётов</Text>
-      <ScrollView style={styles.historyContainer}>
-        {bmiHistory.length > 0 ? (
-          <FlatList
-          data={bmiHistory}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item }) => {
-            const { bmiComment, bmiColor } = calculateBASFIComment(item.score);
-            return (
-              <View style={styles.itemContainer}>
-                <Text style={styles.date}>
-                  {new Date(item.date).toLocaleDateString('ru-RU', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                </Text>
-                <Text style={[styles.bmi, { color: bmiColor }]}>ИМТ: {item.score}</Text>
-                <Text style={styles.comment}>{bmiComment}</Text>
-              </View>
-            );
-          }}
-        />
-        ) : (
-          <View style={styles.notDataContainer}>
-            <Image 
-              source={notData}
-              style={{ width: 150, height: 150 }}
-            />
-            <Text style={styles.notData}>Нет данных</Text>
-          </View>
-        )}
-      </ScrollView>
+      {bmiHistory.length > 0 ? (
+        <View style={{ flex: 1, marginTop: 20 }}>
+          <ScrollView>
+            {bmiHistory.map((item, index) => {
+              const { bmiComment, bmiColor } = calculateBASFIComment(item.score);
+              return (
+                <View key={index} style={styles.itemContainer}>
+                  <Text style={styles.date}>
+                    {new Date(item.date).toLocaleDateString('ru-RU', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </Text>
+                  <Text style={[styles.bmi, { color: bmiColor }]}>ИМТ: {item.score}</Text>
+                  <Text style={styles.comment}>{bmiComment}</Text>
+                </View>
+              );
+            })}
+          </ScrollView>
+        </View>
+      ) : (
+        <View style={styles.notDataContainer}>
+          <Image source={notData} style={{ width: 150, height: 150 }} />
+          <Text style={styles.notData}>Нет данных</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -77,46 +72,6 @@ const styles = StyleSheet.create({
     color: '#4A90E2',
     textAlign: 'center',
   },
-  chartContainer: {
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  chart: {
-    borderRadius: 16,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 20,
-  },
-  date: {
-    position: 'absolute',
-    right: 20,
-    top: 15,
-    fontSize: 16,
-    color: '#666',
-  },  
-  chartButton: {
-    backgroundColor: '#1E90FF',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    flexShrink: 0,
-  },
-  selectedButton: {
-    backgroundColor: '#32CD32',
-  },
-  chartButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    textAlign: 'center',
-    flexShrink: 0,
-  },
-  historyContainer: {
-    flex: 1,
-    marginTop: 16,
-  },
   itemContainer: {
     padding: 15,
     backgroundColor: '#fff',
@@ -128,10 +83,12 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  index: {
+  date: {
+    position: 'absolute',
+    right: 20,
+    top: 15,
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
+    color: '#666',
   },
   bmi: {
     fontSize: 18,
@@ -144,21 +101,15 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontStyle: 'normal',
   },
-  noHistoryText: {
-    fontSize: 18,
-    color: '#777',
-    textAlign: 'center',
-    marginTop: 20,
-  },
   notDataContainer: {
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 150,
     gap: 20,
-    marginTop: 150
-  },  
-  notData:{
+  },
+  notData: {
     fontSize: 20,
     color: '#777',
     textAlign: 'center',
-    },
+  },
 });

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { addBmiHistory } from '@/store/bmiSlice';
 import Slider from '@react-native-community/slider';
+
+type QuestionItem = string;
 
 export default function CalendarScreen() {
   const dispatch = useDispatch();
@@ -12,9 +14,9 @@ export default function CalendarScreen() {
     color: '#000',
     score: null,
   });
-  const [alertVisible, setAlertVisible] = useState(false); // состояние для показа алерта
+  const [alertVisible, setAlertVisible] = useState(false);
 
-  const questions = [
+  const questions: QuestionItem[] = [
     'Надевать носки или колготки без посторонней помощи или вспомогательных средств.',
     'Наклоняться вперед, чтобы поднять предмет с пола без вспомогательных средств.',
     'Дотягиваться до высоких полок без посторонней помощи или вспомогательных средств.',
@@ -34,6 +36,23 @@ export default function CalendarScreen() {
       return updatedAnswers;
     });
   };
+
+  const renderItem = ({ item, index }: { item: QuestionItem; index: number }) => (
+    <View key={index} style={styles.questionContainer}>
+      <Text style={styles.inputLabel}>{`${index + 1}. ${item}`}</Text>
+      <Text style={styles.sliderValue}>{answers[index]}</Text>
+      <Slider
+        style={styles.input}
+        minimumValue={0}
+        maximumValue={10}
+        step={1}
+        value={answers[index]}
+        onValueChange={(value) => handleSliderChange(value, index)}
+        minimumTrackTintColor="#addfad"
+        maximumTrackTintColor="#9797974f"
+      />
+    </View>
+  );
 
   const calculateBmi = () => {
     const totalScore = answers.reduce((sum, score) => sum + score, 0);
@@ -68,41 +87,24 @@ export default function CalendarScreen() {
       age: 0
     }));
 
-    // Показать алерт, что расчёт завершен
     setAlertVisible(true);
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>BASFI</Text>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {questions.map((question, index) => (
-          <View key={index} style={styles.questionContainer}>
-            <Text style={styles.inputLabel}>{`${index + 1}. ${question}`}</Text>
-            <Text style={styles.sliderValue}>{answers[index]}</Text>
-            <Slider
-              style={styles.input}
-              minimumValue={0}
-              maximumValue={10}
-              step={1}
-              value={answers[index]}
-              onValueChange={(value) => handleSliderChange(value, index)}
-              minimumTrackTintColor="#addfad"
-              maximumTrackTintColor="#9797974f"
-            />
-          </View>
-        ))}
 
-        <TouchableOpacity style={styles.button} onPress={calculateBmi}>
-          <Text style={styles.buttonText}>Рассчитать индекс</Text>
-        </TouchableOpacity>
+      <FlatList
+        data={questions}
+        renderItem={renderItem}
+        keyExtractor={(item, index) => index.toString()}
+        contentContainerStyle={styles.scrollContainer}
+      />
 
-        {result.score !== null && (
-          <Text style={[styles.result, { color: result.color }]}>{result.comment}</Text>
-        )}
-      </ScrollView>
+      <TouchableOpacity style={styles.button} onPress={calculateBmi}>
+        <Text style={styles.buttonText}>Рассчитать индекс</Text>
+      </TouchableOpacity>
 
-      {/* Модальное окно с алертом */}
       <Modal
         transparent={true}
         visible={alertVisible}
@@ -115,7 +117,7 @@ export default function CalendarScreen() {
             <Text style={styles.modalText}>{result.comment}</Text>
             <TouchableOpacity
               style={styles.modalButton}
-              onPress={() => setAlertVisible(false)} // Закрыть алерт
+              onPress={() => setAlertVisible(false)}
             >
               <Text style={styles.modalButtonText}>Закрыть</Text>
             </TouchableOpacity>
