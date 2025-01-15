@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal } from 'react-native';
 import { useDispatch } from 'react-redux';
-import { addBmiHistory } from '@/store/bmiSlice';
+import { addBasfiHistory } from '@/store/basfiSlice';
 import Slider from '@react-native-community/slider';
+import firestore from '@react-native-firebase/firestore';
 
 type QuestionItem = string;
 
@@ -15,6 +16,7 @@ export default function CalendarScreen() {
     score: null,
   });
   const [alertVisible, setAlertVisible] = useState(false);
+  const [savedHistory, setSavedHistory] = useState<any[]>([]); // Для хранения истории из Firebase
 
   const questions: QuestionItem[] = [
     'Надевать носки или колготки без посторонней помощи или вспомогательных средств.',
@@ -54,37 +56,58 @@ export default function CalendarScreen() {
     </View>
   );
 
-  const calculateBmi = () => {
+  const calculateBasfi = () => {
     const totalScore = answers.reduce((sum, score) => sum + score, 0);
     const averageScore = totalScore / answers.length;
 
-    let bmiComment = '';
-    let bmiColor = '#000';
+    let basfiComment = '';
+    let basfiColor = '#000';
 
-    if (averageScore < 1) {
-      bmiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Отсутствие ограничений.`;
-      bmiColor = '#32CD32';
-    } else if (averageScore <= 5) {
-      bmiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Умеренные ограничения.`;
-      bmiColor = '#FFA500';
+    if (averageScore <= 3) {
+      basfiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Отсутствие ограничений.`;
+      basfiColor = '#32CD32';
+    } else if (averageScore >= 4 && averageScore <= 6) {
+      basfiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Умеренные ограничения.`;
+      basfiColor = '#FFA500';
     } else {
-      bmiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Невозможность выполнить определенное действие. Рекомендуется консультация врача.`;
-      bmiColor = '#FF6347';
+      basfiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Невозможность выполнить определенное действие. Рекомендуется консультация врача.`;
+      basfiColor = '#FF6347';
     }
 
+  // Функция загрузки данных из Firebase
+  const saveDataToFirebase = async () => {
+    try {
+      await firestore()
+        .collection('userData')
+        .add({
+          date: new Date().toISOString(),
+          score: 5, // Замените на ваши данные
+          comment: 'Test data',
+        });
+      console.log('Data successfully added to Firestore');
+    } catch (error) {
+      console.error('Error adding document: ', error);
+    }
+  };
+
+  // Загружаем данные при монтировании компонента
+  useEffect(() => {
+    saveDataToFirebase();
+  }, []);
+
     setResult({
-      comment: bmiComment,
-      color: bmiColor,
+      comment: basfiComment,
+      color: basfiColor,
       score: parseFloat(averageScore.toFixed(1)),
     });
 
-    dispatch(addBmiHistory({
+    dispatch(addBasfiHistory({
       date: new Date().toISOString().split('T')[0],
       score: averageScore,
-      comment: bmiComment,
-      bmi: 0,
+      comment: basfiComment,
+      basfi: 0,
       template: '',
-      age: 0
+      age: 0,
     }));
 
     setAlertVisible(true);
@@ -101,7 +124,7 @@ export default function CalendarScreen() {
         contentContainerStyle={styles.scrollContainer}
       />
 
-      <TouchableOpacity style={styles.button} onPress={calculateBmi}>
+      <TouchableOpacity style={styles.button} onPress={calculateBasfi}>
         <Text style={styles.buttonText}>Рассчитать индекс</Text>
       </TouchableOpacity>
 
@@ -124,6 +147,18 @@ export default function CalendarScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Отображение загруженной истории */}
+      {savedHistory.length > 0 && (
+        <View style={styles.historyContainer}>
+          <Text style={styles.historyTitle}>История из Firebase:</Text>
+          {savedHistory.map((item, index) => (
+            <Text key={index} style={styles.historyItem}>
+              {`Дата: ${item.date}, Индекс BASFI: ${item.score}`}
+            </Text>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -141,7 +176,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 30,
     fontWeight: 'bold',
-    color: '#4A90E2',
+    color: '#5dda8b',
     textAlign: 'center',
   },
   questionContainer: {
@@ -168,12 +203,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-  result: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 20,
-    textAlign: 'center',
-  },
   sliderValue: {
     fontSize: 16,
     color: '#333',
@@ -181,7 +210,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 8,
   },
-  // Модальные стили
   modalBackground: {
     flex: 1,
     justifyContent: 'center',
@@ -211,5 +239,19 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  historyContainer: {
+    marginTop: 20,
+  },
+  historyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  historyItem: {
+    fontSize: 16,
+    color: '#555',
+    marginBottom: 5,
   },
 });

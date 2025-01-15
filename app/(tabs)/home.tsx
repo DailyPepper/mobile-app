@@ -2,37 +2,56 @@ import React from 'react';
 import { View, Text, ScrollView, Image, StyleSheet } from 'react-native';
 import { useSelector } from 'react-redux';
 import notData from '../../assets/images/notData.png';
+// import firestore from '@react-native-firebase/firestore'; // Импорт Firestore
 import { RootState } from '@/store/store';
 
 export default function HistoryScreen() {
-  const bmiHistory = useSelector((state: RootState) => state.bmi.bmiHistory);
+  const basfiHistory = useSelector((state: RootState) => state.basfi.basfiHistory);
+  // const [savedHistory, setSavedHistory] = useState<any[]>([]); // Состояние для сохраненной истории из Firebase
+  
+  // // Функция для загрузки данных из Firebase
+  // const loadDataFromFirebase = async () => {
+  //   try {
+  //     const snapshot = await firestore().collection('userData').get();
+  //     const firebaseHistory = snapshot.docs.map(doc => doc.data());
+  //     setSavedHistory(firebaseHistory);
+  //   } catch (error) {
+  //     console.error('Error loading data from Firebase: ', error);
+  //   }
+  // };
+  
 
+  // // Загружаем данные при монтировании компонента
+  // useEffect(() => {
+  //   loadDataFromFirebase();
+  // }, []);
+  
   const calculateBASFIComment = (averageScore: number) => {
-    let bmiComment = '';
-    let bmiColor = '#000';
+    let basfiComment = '';
+    let basfiColor = '#000';
 
-    if (averageScore < 1) {
-      bmiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Отсутствие ограничений.`;
-      bmiColor = '#32CD32';
-    } else if (averageScore <= 5) {
-      bmiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Умеренные ограничения.`;
-      bmiColor = '#FFA500';
+    if (averageScore <= 3) {
+      basfiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Отсутствие ограничений.`;
+      basfiColor = '#32CD32';
+    } else if (averageScore >= 4 && averageScore <= 6) {
+      basfiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Умеренные ограничения.`;
+      basfiColor = '#FFA500';
     } else {
-      bmiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Невозможность выполнить определенное действие. Рекомендуется консультация врача.`;
-      bmiColor = '#FF6347';
+      basfiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Невозможность выполнить определенное действие. Рекомендуется консультация врача.`;
+      basfiColor = '#FF6347';
     }
 
-    return { bmiComment, bmiColor };
+    return { basfiComment, basfiColor };
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>История ваших расчётов</Text>
-      {bmiHistory.length > 0 ? (
+      {basfiHistory.length > 0 ? (
         <View style={{ flex: 1, marginTop: 20 }}>
           <ScrollView>
-            {bmiHistory.map((item, index) => {
-              const { bmiComment, bmiColor } = calculateBASFIComment(item.score);
+            {(basfiHistory).map((item, index) => {
+              const { basfiComment, basfiColor } = calculateBASFIComment(item.score);
               return (
                 <View key={index} style={styles.itemContainer}>
                   <Text style={styles.date}>
@@ -42,8 +61,8 @@ export default function HistoryScreen() {
                       year: 'numeric',
                     })}
                   </Text>
-                  <Text style={[styles.bmi, { color: bmiColor }]}>ИМТ: {item.score}</Text>
-                  <Text style={styles.comment}>{bmiComment}</Text>
+                  <Text style={[styles.basfi, { color: basfiColor }]}>ИМТ: {item.score}</Text>
+                  <Text style={styles.comment}>{basfiComment}</Text>
                 </View>
               );
             })}
@@ -59,6 +78,7 @@ export default function HistoryScreen() {
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -69,7 +89,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 30,
     fontWeight: 'bold',
-    color: '#4A90E2',
+    color: '#5dda8b',
     textAlign: 'center',
   },
   itemContainer: {
@@ -90,7 +110,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
-  bmi: {
+  basfi: {
     fontSize: 18,
     color: '#4CAF50',
     fontWeight: 'bold',

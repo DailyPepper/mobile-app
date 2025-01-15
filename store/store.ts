@@ -1,9 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit';
-import bmiReducer from './bmiSlice';
+import basfiReducer from './basfiSlice';
 
 const store = configureStore({
   reducer: {
-    bmi: bmiReducer,
+    basfi: basfiReducer,
   },
 });
 

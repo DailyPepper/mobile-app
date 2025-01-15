@@ -9,9 +9,9 @@ type ICategory = {
 
 export default function HomeScreen() {
   const indexCategories = useMemo<ICategory[]>(() => [
-    { category: 'Отсутствие ограничений', range: '0', color: '#FF6347' },
-    { category: 'Умеренные ограничения', range: '5', color: '#32CD32' },
-    { category: 'Невозможность выполнить определенное действие', range: '10', color: '#FFA500' },
+    { category: 'Отсутствие ограничений', range: 'от 0 до 3',color: '#32CD32'   },
+    { category: 'Умеренные ограничения', range: 'от 4 до 6', color: '#FFA500' },
+    { category: 'Невозможность выполнить определенное действие', range: 'от 7 до 10', color: '#FF6347' },
   ], []);
 
   const renderItem: ListRenderItem<ICategory> = ({ item }) => (
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 30,
     fontWeight: 'bold',
-    color: '#4A90E2',
+    color: '#5dda8b',
     marginBottom: 20,
     textAlign: 'center',
   },
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   },
   itemTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '500',
     marginBottom: 5,
   },
   itemRange: {
