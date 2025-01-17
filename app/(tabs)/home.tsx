@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, ScrollView, Image, StyleSheet } from 'react-native';
 import { useSelector } from 'react-redux';
 import notData from '../../assets/images/notData.png';
-// import firestore from '@react-native-firebase/firestore'; // Импорт Firestore
 import { RootState } from '@/store/store';
 
 export default function HistoryScreen() {

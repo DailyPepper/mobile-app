@@ -5,8 +5,6 @@ interface BasfiData {
   date: string;
   basfi: number;
   comment: string;
-  template: string;
-  age: number;
 }
 
 interface BasfiState {

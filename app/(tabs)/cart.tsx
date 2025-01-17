@@ -90,8 +90,6 @@ export default function CalendarScreen() {
         score: averageScore,
         comment: basfiComment,
         basfi: 0,
-        template: '',
-        age: 0,
       })
     );
 
