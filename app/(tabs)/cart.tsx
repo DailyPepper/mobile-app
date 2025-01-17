@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { addBasfiHistory } from '@/store/basfiSlice';
 import Slider from '@react-native-community/slider';
-import firestore from '@react-native-firebase/firestore';
 
 type QuestionItem = string;
 
@@ -16,7 +15,6 @@ export default function CalendarScreen() {
     score: null,
   });
   const [alertVisible, setAlertVisible] = useState(false);
-  const [savedHistory, setSavedHistory] = useState<any[]>([]); // Для хранения истории из Firebase
 
   const questions: QuestionItem[] = [
     'Надевать носки или колготки без посторонней помощи или вспомогательных средств.',
@@ -56,7 +54,7 @@ export default function CalendarScreen() {
     </View>
   );
 
-  const calculateBasfi = () => {
+  const calculateBasfi = async () => {
     const totalScore = answers.reduce((sum, score) => sum + score, 0);
     const averageScore = totalScore / answers.length;
 
@@ -74,41 +72,28 @@ export default function CalendarScreen() {
       basfiColor = '#FF6347';
     }
 
-  // Функция загрузки данных из Firebase
-  const saveDataToFirebase = async () => {
-    try {
-      await firestore()
-        .collection('userData')
-        .add({
-          date: new Date().toISOString(),
-          score: 5, // Замените на ваши данные
-          comment: 'Test data',
-        });
-      console.log('Data successfully added to Firestore');
-    } catch (error) {
-      console.error('Error adding document: ', error);
-    }
-  };
-
-  // Загружаем данные при монтировании компонента
-  useEffect(() => {
-    saveDataToFirebase();
-  }, []);
+    const dataToSave = {
+      date: new Date().toISOString(),
+      score: parseFloat(averageScore.toFixed(1)),
+      comment: basfiComment,
+    };
 
     setResult({
       comment: basfiComment,
       color: basfiColor,
-      score: parseFloat(averageScore.toFixed(1)),
+      score: dataToSave.score,
     });
 
-    dispatch(addBasfiHistory({
-      date: new Date().toISOString().split('T')[0],
-      score: averageScore,
-      comment: basfiComment,
-      basfi: 0,
-      template: '',
-      age: 0,
-    }));
+    dispatch(
+      addBasfiHistory({
+        date: new Date().toISOString().split('T')[0],
+        score: averageScore,
+        comment: basfiComment,
+        basfi: 0,
+        template: '',
+        age: 0,
+      })
+    );
 
     setAlertVisible(true);
   };
@@ -147,21 +132,10 @@ export default function CalendarScreen() {
           </View>
         </View>
       </Modal>
-
-      {/* Отображение загруженной истории */}
-      {savedHistory.length > 0 && (
-        <View style={styles.historyContainer}>
-          <Text style={styles.historyTitle}>История из Firebase:</Text>
-          {savedHistory.map((item, index) => (
-            <Text key={index} style={styles.historyItem}>
-              {`Дата: ${item.date}, Индекс BASFI: ${item.score}`}
-            </Text>
-          ))}
-        </View>
-      )}
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   scrollContainer: {
