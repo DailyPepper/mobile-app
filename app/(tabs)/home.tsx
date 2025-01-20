@@ -1,42 +1,46 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, Image, StyleSheet } from 'react-native';
-import { useSelector } from 'react-redux';
+import axios from 'axios';
 import notData from '../../assets/images/notData.png';
-import { RootState } from '@/store/store';
+import { useDispatch } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/native';
+import { addBasfiHistory, HistoryItem } from '@/store/basfiSlice';
 
 export default function HistoryScreen() {
-  const basfiHistory = useSelector((state: RootState) => state.basfi.basfiHistory);
-  // const [savedHistory, setSavedHistory] = useState<any[]>([]); // Состояние для сохраненной истории из Firebase
-  
-  // // Функция для загрузки данных из Firebase
-  // const loadDataFromFirebase = async () => {
-  //   try {
-  //     const snapshot = await firestore().collection('userData').get();
-  //     const firebaseHistory = snapshot.docs.map(doc => doc.data());
-  //     setSavedHistory(firebaseHistory);
-  //   } catch (error) {
-  //     console.error('Error loading data from Firebase: ', error);
-  //   }
-  // };
-  
+  const dispatch = useDispatch();
+  const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
 
-  // // Загружаем данные при монтировании компонента
-  // useEffect(() => {
-  //   loadDataFromFirebase();
-  // }, []);
-  
-  const calculateBASFIComment = (averageScore: number) => {
+  const loadDataFromServer = async () => {
+    try {
+      const response = await axios.get('http://localhost:8081/resultUser');
+      if (response.data && response.data.length > 0) {
+        setHistoryData(response.data);
+        dispatch(addBasfiHistory(response.data));
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке данных:', error);
+      alert('Ошибка при загрузке данных. Попробуйте снова позже.');
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadDataFromServer();
+    }, [])
+  );
+
+  const calculateBASFIComment = (score: number) => {
     let basfiComment = '';
     let basfiColor = '#000';
 
-    if (averageScore <= 3) {
-      basfiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Отсутствие ограничений.`;
+    if (score <= 3) {
+      basfiComment = `Ваш индекс BASFI: ${score.toFixed(1)}. Отсутствие ограничений.`;
       basfiColor = '#32CD32';
-    } else if (averageScore >= 4 && averageScore <= 6) {
-      basfiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Умеренные ограничения.`;
+    } else if (score >= 4 && score <= 6) {
+      basfiComment = `Ваш индекс BASFI: ${score.toFixed(1)}. Умеренные ограничения.`;
       basfiColor = '#FFA500';
     } else {
-      basfiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Невозможность выполнить определенное действие. Рекомендуется консультация врача.`;
+      basfiComment = `Ваш индекс BASFI: ${score.toFixed(1)}. Невозможность выполнить определенное действие. Рекомендуется консультация врача.`;
       basfiColor = '#FF6347';
     }
 
@@ -46,11 +50,19 @@ export default function HistoryScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>История ваших расчётов</Text>
-      {basfiHistory.length > 0 ? (
+      {historyData.length > 0 ? (
         <View style={{ flex: 1, marginTop: 20 }}>
           <ScrollView>
-            {(basfiHistory).map((item, index) => {
-              const { basfiComment, basfiColor } = calculateBASFIComment(item.score);
+            {historyData.slice().reverse().map((item, index) => {
+              if (item.result === undefined || item.result === null) {
+                return (
+                  <View key={index} style={styles.itemContainer}>
+                    <Text style={styles.comment}>Ошибка: данные отсутствуют.</Text>
+                  </View>
+                );
+              }
+
+              const { basfiColor } = calculateBASFIComment(item.result);
               return (
                 <View key={index} style={styles.itemContainer}>
                   <Text style={styles.date}>
@@ -60,8 +72,10 @@ export default function HistoryScreen() {
                       year: 'numeric',
                     })}
                   </Text>
-                  <Text style={[styles.basfi, { color: basfiColor }]}>ИМТ: {item.score}</Text>
-                  <Text style={styles.comment}>{basfiComment}</Text>
+                  <Text style={[styles.basfi, { color: basfiColor }]}>
+                    Ваш результат: {item.result}
+                  </Text>
+                  <Text style={styles.comment}>{item.comment}</Text>
                 </View>
               );
             })}
@@ -76,7 +90,6 @@ export default function HistoryScreen() {
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -111,7 +124,6 @@ const styles = StyleSheet.create({
   },
   basfi: {
     fontSize: 18,
-    color: '#4CAF50',
     fontWeight: 'bold',
   },
   comment: {

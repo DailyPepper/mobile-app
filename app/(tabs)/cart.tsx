@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal } from 'react
 import { useDispatch } from 'react-redux';
 import { addBasfiHistory } from '@/store/basfiSlice';
 import Slider from '@react-native-community/slider';
+import axios from 'axios';
 
 type QuestionItem = string;
 
@@ -57,10 +58,10 @@ export default function CalendarScreen() {
   const calculateBasfi = async () => {
     const totalScore = answers.reduce((sum, score) => sum + score, 0);
     const averageScore = totalScore / answers.length;
-
+  
     let basfiComment = '';
     let basfiColor = '#000';
-
+  
     if (averageScore <= 3) {
       basfiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Отсутствие ограничений.`;
       basfiColor = '#32CD32';
@@ -71,30 +72,39 @@ export default function CalendarScreen() {
       basfiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Невозможность выполнить определенное действие. Рекомендуется консультация врача.`;
       basfiColor = '#FF6347';
     }
-
-    const dataToSave = {
-      date: new Date().toISOString(),
-      score: parseFloat(averageScore.toFixed(1)),
-      comment: basfiComment,
-    };
-
-    setResult({
-      comment: basfiComment,
-      color: basfiColor,
-      score: dataToSave.score,
-    });
-
-    dispatch(
-      addBasfiHistory({
-        date: new Date().toISOString().split('T')[0],
-        score: averageScore,
+  
+    const dataToSend = { values: answers };
+  
+    try {
+      const response = await axios.post('http://localhost:8081/userData', dataToSend);
+  
+      if (!response.data) {
+        throw new Error('Нет данных в ответе от сервера');
+      }
+  
+      const result = response.data;
+    
+      setResult({
         comment: basfiComment,
-        basfi: 0,
-      })
-    );
-
-    setAlertVisible(true);
-  };
+        color: basfiColor,
+        score: result.result,
+      });
+  
+      dispatch(
+        addBasfiHistory({
+          date: new Date().toISOString().split('T')[0],
+          score: result.result,
+          comment: basfiComment,
+          basfi: averageScore,
+        })
+      );
+  
+      setAlertVisible(true);
+    } catch (error) {
+      console.error('Ошибка при отправке/получении данных:', error);
+      alert('Ошибка при расчёте BASFI. Попробуйте снова позже.');
+    }
+  };  
 
   return (
     <View style={styles.container}>

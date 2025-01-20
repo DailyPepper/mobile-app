@@ -15,6 +15,13 @@ const initialState: BasfiState = {
   basfiHistory: [],
 };
 
+export interface HistoryItem {
+  result: number;
+  comment: string;
+  date: string;
+}
+
+
 const basfiSlice = createSlice({
   name: 'basfi',
   initialState,
