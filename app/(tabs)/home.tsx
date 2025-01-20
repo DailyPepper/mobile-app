@@ -1,21 +1,33 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, ScrollView, Image, StyleSheet } from 'react-native';
-import axios from 'axios';
+import { useDispatch, useSelector } from 'react-redux';
 import notData from '../../assets/images/notData.png';
-import { useDispatch } from 'react-redux';
-import { useFocusEffect } from '@react-navigation/native';
-import { addBasfiHistory, HistoryItem } from '@/store/basfiSlice';
+import { useFocusEffect } from 'expo-router';
+import { addBasfiHistory } from '@/store/basfiSlice';
+import axios from 'axios';
+import { RootState } from '@/store/store';
 
-export default function HistoryScreen() {
+export default function HomeScreen() {
+  const historyData = useSelector((state: RootState) => state.basfi.basfiHistory);
   const dispatch = useDispatch();
-  const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
 
   const loadDataFromServer = async () => {
     try {
-      const response = await axios.get('http://localhost:8081/resultUser');
+      const response = await axios.get('https://c29ad3f1105849cc.mokky.dev/resultUser');
       if (response.data && response.data.length > 0) {
-        setHistoryData(response.data);
-        dispatch(addBasfiHistory(response.data));
+        const formattedData = response.data.map((item: any) => ({
+          score: item.result,
+          comment: item.comment,
+          date: item.date,
+        }));
+
+        const newData = formattedData.filter(
+          (item: { date: string; }) => !historyData.some((existing) => existing.date === item.date)
+        );
+
+        if (newData.length > 0) {
+          dispatch(addBasfiHistory([...historyData, ...newData]));
+        }
       }
     } catch (error) {
       console.error('Ошибка при загрузке данных:', error);
@@ -25,23 +37,27 @@ export default function HistoryScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      loadDataFromServer();
-    }, [])
+      if (historyData.length === 0) {
+        loadDataFromServer();
+      }
+    }, [historyData])
   );
 
-  const calculateBASFIComment = (score: number) => {
-    let basfiComment = '';
-    let basfiColor = '#000';
+  const calculateBASFIComment = (averageScore?: number) => {
+    let basfiComment = 'Данные отсутствуют.';
+    let basfiColor = '#777';
 
-    if (score <= 3) {
-      basfiComment = `Ваш индекс BASFI: ${score.toFixed(1)}. Отсутствие ограничений.`;
-      basfiColor = '#32CD32';
-    } else if (score >= 4 && score <= 6) {
-      basfiComment = `Ваш индекс BASFI: ${score.toFixed(1)}. Умеренные ограничения.`;
-      basfiColor = '#FFA500';
-    } else {
-      basfiComment = `Ваш индекс BASFI: ${score.toFixed(1)}. Невозможность выполнить определенное действие. Рекомендуется консультация врача.`;
-      basfiColor = '#FF6347';
+    if (averageScore !== undefined) {
+      if (averageScore <= 3) {
+        basfiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Отсутствие ограничений.`;
+        basfiColor = '#32CD32';
+      } else if (averageScore >= 4 && averageScore <= 6) {
+        basfiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Умеренные ограничения.`;
+        basfiColor = '#FFA500';
+      } else {
+        basfiComment = `Ваш индекс BASFI: ${averageScore.toFixed(1)}. Невозможность выполнить определенное действие. Рекомендуется консультация врача.`;
+        basfiColor = '#FF6347';
+      }
     }
 
     return { basfiComment, basfiColor };
@@ -53,32 +69,29 @@ export default function HistoryScreen() {
       {historyData.length > 0 ? (
         <View style={{ flex: 1, marginTop: 20 }}>
           <ScrollView>
-            {historyData.slice().reverse().map((item, index) => {
-              if (item.result === undefined || item.result === null) {
+            {historyData
+              .slice()
+              .reverse()
+              .map((item, index) => {
+                const { basfiComment, basfiColor } = calculateBASFIComment(item.score);
                 return (
                   <View key={index} style={styles.itemContainer}>
-                    <Text style={styles.comment}>Ошибка: данные отсутствуют.</Text>
+                    <Text style={styles.date}>
+                      {item.date
+                        ? new Date(item.date).toLocaleDateString('ru-RU', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                          })
+                        : 'Дата отсутствует'}
+                    </Text>
+                    <Text style={[styles.basfi, { color: basfiColor }]}>
+                      {item.score !== undefined ? `Ваш результат: ${item.score}` : 'Результат отсутствует'}
+                    </Text>
+                    <Text style={styles.comment}>{item.comment || basfiComment}</Text>
                   </View>
                 );
-              }
-
-              const { basfiColor } = calculateBASFIComment(item.result);
-              return (
-                <View key={index} style={styles.itemContainer}>
-                  <Text style={styles.date}>
-                    {new Date(item.date).toLocaleDateString('ru-RU', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                    })}
-                  </Text>
-                  <Text style={[styles.basfi, { color: basfiColor }]}>
-                    Ваш результат: {item.result}
-                  </Text>
-                  <Text style={styles.comment}>{item.comment}</Text>
-                </View>
-              );
-            })}
+              })}
           </ScrollView>
         </View>
       ) : (

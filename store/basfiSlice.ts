@@ -1,39 +1,33 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-interface BasfiData {
-  score: number; 
+export interface HistoryItem {
   date: string;
-  basfi: number;
+  score: number;
   comment: string;
 }
 
 interface BasfiState {
-  basfiHistory: BasfiData[];
+  basfiHistory: HistoryItem[];
 }
 
 const initialState: BasfiState = {
   basfiHistory: [],
 };
 
-export interface HistoryItem {
-  result: number;
-  comment: string;
-  date: string;
-}
-
-
 const basfiSlice = createSlice({
   name: 'basfi',
   initialState,
   reducers: {
-    addBasfiHistory: (state, action: PayloadAction<BasfiData>) => {
-      state.basfiHistory.unshift(action.payload);
-    },
-    setBasfiHistory: (state, action: PayloadAction<BasfiData[]>) => {
-      state.basfiHistory = action.payload;
+    addBasfiHistory(state, action: PayloadAction<HistoryItem[] | HistoryItem>) {
+      if (Array.isArray(action.payload)) {
+        state.basfiHistory = action.payload;
+      } else {
+        state.basfiHistory.push(action.payload);
+      }
     },
   },
 });
 
-export const { addBasfiHistory, setBasfiHistory } = basfiSlice.actions;
+export const { addBasfiHistory } = basfiSlice.actions;
+
 export default basfiSlice.reducer;
