@@ -89,7 +89,6 @@ export default function CalendarScreen() {
         date: new Date().toISOString().split('T')[0],
         score: averageScore,
         comment: basfiComment,
-        basfi: 0,
       })
     );
 
